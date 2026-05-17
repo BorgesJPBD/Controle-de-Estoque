@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0">Registro de Produtos</h4>
+  <a href="/produto/novo" class="btn btn-primary px-4">
+    <i class="bi bi-plus-lg me-2"></i>Novo Produto
+  </a>
+</div>
+
+{% if alertas %}
+<div class="alert d-flex align-items-center gap-2 mb-4" style="background:#fff3e0;border:1px solid #ffb74d;border-radius:10px;color:#e65100">
+  <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+  <span><strong>{{ alertas|length }} produto(s)</strong> com estoque crítico!
+  <a href="/alertas" class="ms-2 fw-semibold" style="color:#e65100">Ver alertas →</a></span>
+</div>
+{% endif %}
+
+<!-- Cards resumo -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="card p-3" style="border-left:4px solid #1976d2!important">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small mb-1">Total de Produtos</div>
+          <div class="fs-2 fw-bold text-primary">{{ resumo.total_produtos }}</div>
+        </div>
+        <div style="background:#e3f2fd;border-radius:12px;padding:12px">
+          <i class="bi bi-box-seam fs-4 text-primary"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3" style="border-left:4px solid #388e3c!important">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small mb-1">Total de Itens</div>
+          <div class="fs-2 fw-bold text-success">{{ resumo.total_itens }}</div>
+        </div>
+        <div style="background:#e8f5e9;border-radius:12px;padding:12px">
+          <i class="bi bi-stack fs-4 text-success"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3" style="border-left:4px solid #0097a7!important">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small mb-1">Valor em Estoque</div>
+          <div class="fs-2 fw-bold" style="color:#0097a7">R$ {{ "%.2f"|format(resumo.valor_total|float) }}</div>
+        </div>
+        <div style="background:#e0f7fa;border-radius:12px;padding:12px">
+          <i class="bi bi-currency-dollar fs-4" style="color:#0097a7"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3" style="border-left:4px solid #d32f2f!important">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="text-muted small mb-1">Itens Críticos</div>
+          <div class="fs-2 fw-bold text-danger">{{ alertas|length }}</div>
+        </div>
+        <div style="background:#ffebee;border-radius:12px;padding:12px">
+          <i class="bi bi-exclamation-triangle fs-4 text-danger"></i>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Tabela -->
+<div class="card">
+  <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+    <span class="fw-semibold">Lista de Produtos</span>
+    <span class="text-muted small">{{ produtos|length }} produto(s)</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead style="background:#f8f9fa">
+        <tr>
+          <th class="ps-4 text-muted fw-semibold" style="font-size:12px">#</th>
+          <th class="text-muted fw-semibold" style="font-size:12px">NOME</th>
+          <th class="text-muted fw-semibold" style="font-size:12px">CATEGORIA</th>
+          <th class="text-muted fw-semibold" style="font-size:12px">QUANTIDADE</th>
+          <th class="text-muted fw-semibold" style="font-size:12px">MÍNIMO</th>
+          <th class="text-muted fw-semibold" style="font-size:12px">STATUS</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in produtos %}
+        <tr>
+          <td class="ps-4 text-muted">{{ p.id }}</td>
+          <td class="fw-semibold">{{ p.nome }}</td>
+          <td>
+            <span class="badge rounded-pill" style="background:#e3f2fd;color:#1565c0;font-weight:500">
+              {{ p.categoria }}
+            </span>
+          </td>
+          <td>
+            <span class="fw-bold {% if p.estoque_baixo %}text-danger{% else %}text-success{% endif %}">
+              {{ p.quantidade }}
+            </span>
+          </td>
+          <td class="text-muted">{{ p.estoque_minimo }}</td>
+          <td>
+            {% if p.estoque_baixo %}
+              <span class="badge rounded-pill bg-danger px-3 py-2">
+                <i class="bi bi-exclamation-circle me-1"></i>Crítico
+              </span>
+            {% else %}
+              <span class="badge rounded-pill bg-success px-3 py-2">
+                <i class="bi bi-check-circle me-1"></i>OK
+              </span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="/produto/{{ p.id }}/editar" class="btn btn-sm btn-outline-primary me-1">
+              <i class="bi bi-pencil"></i>
+            </a>
+            <form method="post" action="/produto/{{ p.id }}/remover" class="d-inline"
+                  onsubmit="return confirm('Remover {{ p.nome }}?')">
+              <button type="submit" class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-trash"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" class="text-center py-5">
+            <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+            <span class="text-muted">Nenhum produto cadastrado.</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

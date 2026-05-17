@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0">Histórico de Movimentações</h4>
+  <div class="d-flex gap-2">
+    <a href="/movimentacao/entrada" class="btn btn-success px-3">
+      <i class="bi bi-arrow-down-circle me-2"></i>Entrada
+    </a>
+    <a href="/movimentacao/saida" class="btn btn-danger px-3">
+      <i class="bi bi-arrow-up-circle me-2"></i>Saída
+    </a>
+  </div>
+</div>
+
+<!-- Filtro -->
+<div class="card mb-4 p-3">
+  <form class="d-flex align-items-center gap-3" method="get">
+    <label class="fw-semibold mb-0 text-muted small">FILTRAR POR TIPO</label>
+    <select name="tipo" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+      <option value="">Todos</option>
+      <option value="entrada" {% if tipo == 'entrada' %}selected{% endif %}>Entradas</option>
+      <option value="saida" {% if tipo == 'saida' %}selected{% endif %}>Saídas</option>
+    </select>
+  </form>
+</div>
+
+<div class="card">
+  <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+    <span class="fw-semibold">Movimentações</span>
+    <span class="text-muted small">{{ movimentacoes|length }} registro(s)</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table table-hover align-middle mb-0">
+      <thead style="background:#f8f9fa">
+        <tr>
+          <th class="ps-4 text-muted fw-semibold" style="font-size:12px">DATA</th>
+          <th class="text-muted fw-semibold" style="font-size:12px">PRODUTO</th>
+          <th class="text-muted fw-semibold" style="font-size:12px">TIPO</th>
+          <th class="text-muted fw-semibold" style="font-size:12px">QUANTIDADE</th>
+          <th class="text-muted fw-semibold" style="font-size:12px">RESPONSÁVEL</th>
+          <th class="text-muted fw-semibold" style="font-size:12px">OBSERVAÇÃO</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in movimentacoes %}
+        <tr>
+          <td class="ps-4 text-muted small">{{ m.data }}</td>
+          <td class="fw-semibold">{{ m.produto_nome }}</td>
+          <td>
+            {% if m.tipo == 'entrada' %}
+              <span class="badge rounded-pill px-3 py-2" style="background:#e8f5e9;color:#2e7d32;font-weight:500">
+                <i class="bi bi-arrow-down-circle me-1"></i>Entrada
+              </span>
+            {% else %}
+              <span class="badge rounded-pill px-3 py-2" style="background:#ffebee;color:#c62828;font-weight:500">
+                <i class="bi bi-arrow-up-circle me-1"></i>Saída
+              </span>
+            {% endif %}
+          </td>
+          <td>
+            <span class="fw-bold {% if m.tipo == 'entrada' %}text-success{% else %}text-danger{% endif %}">
+              {{ '+' if m.tipo == 'entrada' else '-' }}{{ m.quantidade }}
+            </span>
+          </td>
+          <td class="text-muted">{{ m.responsavel or '—' }}</td>
+          <td class="text-muted small">{{ m.observacao or '—' }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" class="text-center py-5">
+            <i class="bi bi-clock-history fs-1 text-muted d-block mb-2"></i>
+            <span class="text-muted">Nenhuma movimentação encontrada.</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

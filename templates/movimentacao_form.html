@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex align-items-center mb-4">
+  <a href="/historico" class="btn btn-outline-secondary btn-sm me-3">← Voltar</a>
+  <h4>{% if tipo == 'entrada' %}⬇️ Registrar Entrada{% else %}⬆️ Registrar Saída{% endif %}</h4>
+</div>
+
+<div class="card p-4" style="max-width:500px">
+  <form method="post">
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Produto *</label>
+      <select name="produto_id" class="form-select" required>
+        <option value="">Selecione...</option>
+        {% for p in produtos %}
+          <option value="{{ p.id }}">{{ p.nome }} — estoque: {{ p.quantidade }} {{ p.unidade }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Quantidade *</label>
+      <input type="number" name="quantidade" class="form-control" min="1" required value="1">
+    </div>
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Responsável</label>
+      <input type="text" name="responsavel" class="form-control" placeholder="Nome do responsável">
+    </div>
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Observação</label>
+      <textarea name="observacao" class="form-control" rows="2"></textarea>
+    </div>
+    <button type="submit" class="btn {% if tipo == 'entrada' %}btn-success{% else %}btn-danger{% endif %}">
+      Confirmar {{ tipo|capitalize }}
+    </button>
+    <a href="/historico" class="btn btn-outline-secondary ms-2">Cancelar</a>
+  </form>
+</div>
+{% endblock %}

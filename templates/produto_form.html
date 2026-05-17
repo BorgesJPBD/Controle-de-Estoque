@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex align-items-center mb-4">
+  <a href="/" class="btn btn-outline-secondary btn-sm me-3">← Voltar</a>
+  <h4>{% if produto %}Editar Produto{% else %}Novo Produto{% endif %}</h4>
+</div>
+
+<div class="card p-4" style="max-width:500px">
+  <form method="post">
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Nome *</label>
+      <input type="text" name="nome" class="form-control" required
+             value="{{ produto.nome if produto else '' }}">
+    </div>
+    <div class="row g-3 mb-3">
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">Categoria *</label>
+        <input type="text" name="categoria" class="form-control" required
+               value="{{ produto.categoria if produto else 'Geral' }}">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label fw-semibold">Unidade *</label>
+        <input type="text" name="unidade" class="form-control" required
+               value="{{ produto.unidade if produto else 'UN' }}">
+      </div>
+    </div>
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Preço (R$)</label>
+        <input type="number" name="preco" class="form-control" step="0.01" min="0"
+               value="{{ produto.preco if produto else '0.00' }}">
+      </div>
+      {% if not produto %}
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Quantidade inicial</label>
+        <input type="number" name="quantidade" class="form-control" min="0" value="0">
+      </div>
+      {% endif %}
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Estoque mínimo</label>
+        <input type="number" name="estoque_minimo" class="form-control" min="0"
+               value="{{ produto.estoque_minimo if produto else '5' }}">
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Salvar</button>
+    <a href="/" class="btn btn-outline-secondary ms-2">Cancelar</a>
+  </form>
+</div>
+{% endblock %}
