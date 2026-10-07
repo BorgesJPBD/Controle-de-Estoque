@@ -1,0 +1,8 @@
+{% extends "auth/_base_acesso.html" %}
+{% block titulo %}Solicitação enviada{% endblock %}
+{% block conteudo %}
+<div class="vazio-icone mx-0 mb-4"><i class="bi bi-hourglass-split"></i></div>
+<h2>Solicitação enviada</h2>
+<p class="sub">Obrigado, {{ nome }}. Assim que um administrador aprovar o seu cadastro, você poderá entrar com o e-mail e a senha que acabou de criar.</p>
+<a href="{{ url_for('auth.login') }}" class="btn btn-contorno btn-lg">Voltar para a tela de entrada</a>
+{% endblock %}

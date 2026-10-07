@@ -1,93 +1,120 @@
+"""Relatórios em CSV (separador ';' e UTF-8 com BOM, para abrir direto no Excel).
+
+As funções csv_* devolvem o conteúdo em texto e são usadas pela versão web
+(download no navegador). As funções relatorio_* gravam o arquivo na pasta
+relatorios/ e continuam disponíveis para a versão desktop antiga.
+"""
 import csv
+import io
 import os
 from datetime import datetime
+
 from services import ProdutoService, MovimentacaoService
+from utils.helpers import formatar_data_hora
 
 
 REPORTS_DIR = os.path.join(os.path.dirname(__file__), "..", "relatorios")
 
+STATUS_TEXTO = {"critico": "CRÍTICO", "atencao": "ATENÇÃO", "normal": "OK"}
 
-def _garantir_pasta():
+
+def _num(valor: float) -> str:
+    """Número no formato brasileiro (vírgula decimal) para o Excel reconhecer."""
+    return f"{valor:.2f}".replace(".", ",")
+
+
+def _gerar_csv(campos, linhas) -> str:
+    buffer = io.StringIO()
+    w = csv.writer(buffer, delimiter=";")
+    w.writerow(campos)
+    w.writerows(linhas)
+    return "﻿" + buffer.getvalue()
+
+
+# ── Conteúdo dos relatórios ───────────────────────────────────────────────────
+
+def csv_estoque_completo(filtro_nome="", filtro_categoria="", filtro_status="") -> str:
+    produtos = ProdutoService.listar(filtro_nome, filtro_categoria, filtro_status)
+    campos = ["Código", "Nome", "Categoria", "Unidade", "Preço (R$)",
+              "Quantidade", "Estoque Mínimo", "Valor Total (R$)", "Situação", "Cadastrado em"]
+    linhas = [[
+        p.codigo, p.nome, p.categoria, p.unidade, _num(p.preco),
+        p.quantidade, p.estoque_minimo, _num(p.valor_total),
+        STATUS_TEXTO[p.status], formatar_data_hora(p.criado_em),
+    ] for p in produtos]
+    return _gerar_csv(campos, linhas)
+
+
+def csv_estoque_baixo() -> str:
+    produtos = ProdutoService.estoque_baixo()
+    campos = ["Código", "Nome", "Categoria", "Unidade", "Quantidade",
+              "Estoque Mínimo", "Déficit", "Reposição sugerida"]
+    linhas = [[p.codigo, p.nome, p.categoria, p.unidade, p.quantidade,
+               p.estoque_minimo, p.deficit, p.reposicao_sugerida] for p in produtos]
+    return _gerar_csv(campos, linhas)
+
+
+def csv_movimentacoes(tipo=None, busca=None, setor=None, data_inicio=None, data_fim=None,
+                      produto_id=None) -> str:
+    movs = MovimentacaoService.historico(
+        produto_id=produto_id, tipo=tipo, busca=busca, setor=setor,
+        data_inicio=data_inicio, data_fim=data_fim, limite=100000,
+    )
+    campos = ["Data", "Código", "Produto", "Tipo", "Quantidade", "Unidade",
+              "Setor de destino", "Responsável", "Observação"]
+    linhas = [[
+        formatar_data_hora(m["data"]), m.get("produto_codigo", ""), m["produto_nome"],
+        "Entrada" if m["tipo"] == "entrada" else "Saída", m["quantidade"],
+        m.get("produto_unidade", ""), m.get("setor", ""),
+        m.get("usuario_nome") or m["responsavel"], m["observacao"],
+    ] for m in movs]
+    return _gerar_csv(campos, linhas)
+
+
+def csv_resumo_por_categoria() -> str:
+    produtos = ProdutoService.listar()
+    cats: dict = {}
+    for p in produtos:
+        dados = cats.setdefault(p.categoria, {"qtd_itens": 0, "total_unidades": 0,
+                                              "valor_total": 0.0, "criticos": 0})
+        dados["qtd_itens"] += 1
+        dados["total_unidades"] += p.quantidade
+        dados["valor_total"] += p.valor_total
+        dados["criticos"] += 1 if p.estoque_baixo else 0
+    campos = ["Categoria", "Qtd de Produtos", "Total de Unidades",
+              "Valor Total (R$)", "Itens Críticos"]
+    linhas = [[cat, d["qtd_itens"], d["total_unidades"], _num(d["valor_total"]), d["criticos"]]
+              for cat, d in sorted(cats.items())]
+    return _gerar_csv(campos, linhas)
+
+
+def nome_arquivo(prefixo: str) -> str:
+    return f"{prefixo}_{datetime.now().strftime('%Y%m%d_%H%M')}.csv"
+
+
+# ── Versão desktop: grava os arquivos em relatorios/ ──────────────────────────
+
+def _salvar(prefixo: str, conteudo: str) -> str:
     os.makedirs(REPORTS_DIR, exist_ok=True)
-
-
-def _nome_arquivo(prefixo: str) -> str:
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
-    return os.path.join(REPORTS_DIR, f"{prefixo}_{ts}.csv")
+    caminho = os.path.join(REPORTS_DIR, f"{prefixo}_{ts}.csv")
+    with open(caminho, "w", newline="", encoding="utf-8") as f:
+        f.write(conteudo)
+    return caminho
 
 
 def relatorio_estoque_completo() -> str:
-    _garantir_pasta()
-    caminho = _nome_arquivo("estoque_completo")
-    produtos = ProdutoService.listar()
-    campos = ["ID", "Nome", "Categoria", "Unidade", "Preço (R$)",
-              "Quantidade", "Estoque Mínimo", "Valor Total (R$)",
-              "Alerta", "Cadastrado em"]
-    with open(caminho, "w", newline="", encoding="utf-8-sig") as f:
-        w = csv.writer(f, delimiter=";")
-        w.writerow(campos)
-        for p in produtos:
-            w.writerow([
-                p.id, p.nome, p.categoria, p.unidade,
-                f"{p.preco:.2f}", p.quantidade, p.estoque_minimo,
-                f"{p.valor_total:.2f}",
-                "⚠ BAIXO" if p.estoque_baixo else "OK",
-                p.criado_em,
-            ])
-    return caminho
+    return _salvar("estoque_completo", csv_estoque_completo())
 
 
 def relatorio_estoque_baixo() -> str:
-    _garantir_pasta()
-    caminho = _nome_arquivo("estoque_baixo")
-    produtos = ProdutoService.estoque_baixo()
-    campos = ["ID", "Nome", "Categoria", "Unidade", "Quantidade", "Estoque Mínimo"]
-    with open(caminho, "w", newline="", encoding="utf-8-sig") as f:
-        w = csv.writer(f, delimiter=";")
-        w.writerow(campos)
-        for p in produtos:
-            w.writerow([p.id, p.nome, p.categoria, p.unidade,
-                        p.quantidade, p.estoque_minimo])
-    return caminho
+    return _salvar("estoque_baixo", csv_estoque_baixo())
 
 
 def relatorio_movimentacoes(produto_id=None, tipo=None) -> str:
-    _garantir_pasta()
-    prefixo = "movimentacoes"
-    if tipo:
-        prefixo += f"_{tipo}"
-    caminho = _nome_arquivo(prefixo)
-    movs = MovimentacaoService.historico(produto_id=produto_id, tipo=tipo)
-    campos = ["ID", "Produto", "Tipo", "Quantidade", "Responsável", "Observação", "Data"]
-    with open(caminho, "w", newline="", encoding="utf-8-sig") as f:
-        w = csv.writer(f, delimiter=";")
-        w.writerow(campos)
-        for m in movs:
-            w.writerow([
-                m["id"], m["produto_nome"], m["tipo"], m["quantidade"],
-                m["responsavel"], m["observacao"], m["data"],
-            ])
-    return caminho
+    prefixo = f"movimentacoes_{tipo}" if tipo else "movimentacoes"
+    return _salvar(prefixo, csv_movimentacoes(tipo=tipo, produto_id=produto_id))
 
 
 def relatorio_resumo_por_categoria() -> str:
-    _garantir_pasta()
-    caminho = _nome_arquivo("resumo_categoria")
-    produtos = ProdutoService.listar()
-    # agrupa por categoria
-    cats: dict = {}
-    for p in produtos:
-        cat = p.categoria
-        if cat not in cats:
-            cats[cat] = {"qtd_itens": 0, "total_unidades": 0, "valor_total": 0.0}
-        cats[cat]["qtd_itens"] += 1
-        cats[cat]["total_unidades"] += p.quantidade
-        cats[cat]["valor_total"] += p.valor_total
-    campos = ["Categoria", "Qtd de Produtos", "Total de Unidades", "Valor Total (R$)"]
-    with open(caminho, "w", newline="", encoding="utf-8-sig") as f:
-        w = csv.writer(f, delimiter=";")
-        w.writerow(campos)
-        for cat, dados in sorted(cats.items()):
-            w.writerow([cat, dados["qtd_itens"], dados["total_unidades"],
-                        f"{dados['valor_total']:.2f}"])
-    return caminho
+    return _salvar("resumo_categoria", csv_resumo_por_categoria())

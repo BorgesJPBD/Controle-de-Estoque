@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block titulo %}Histórico{% endblock %}
+{% block conteudo %}
+
+<div class="pagina-cabecalho">
+  <div>
+    <h1>Histórico de movimentações</h1>
+    <p>Todas as entradas e saídas, com quem registrou e para qual setor o material foi.</p>
+  </div>
+  <div class="pagina-acoes">
+    <a href="{{ url_for('relatorios.baixar', relatorio='movimentacoes', **filtros) }}" class="btn btn-contorno"><i class="bi bi-download"></i>Exportar CSV</a>
+    <a href="{{ url_for('movimentacoes.entrada') }}" class="btn btn-entrada"><i class="bi bi-box-arrow-in-down"></i>Entrada</a>
+    <a href="{{ url_for('movimentacoes.saida') }}" class="btn btn-saida"><i class="bi bi-box-arrow-up"></i>Saída</a>
+  </div>
+</div>
+
+<section class="painel">
+  <form class="filtros" method="get" data-auto-enviar role="search">
+    <div class="busca">
+      <i class="bi bi-search"></i>
+      <input type="search" name="busca" value="{{ filtros.busca }}" class="form-control form-control-sm"
+             placeholder="Buscar produto ou código" aria-label="Buscar produto ou código">
+    </div>
+    <select name="tipo" class="form-select form-select-sm" aria-label="Tipo">
+      <option value="">Entradas e saídas</option>
+      <option value="entrada" {% if filtros.tipo == 'entrada' %}selected{% endif %}>Só entradas</option>
+      <option value="saida" {% if filtros.tipo == 'saida' %}selected{% endif %}>Só saídas</option>
+    </select>
+    <select name="setor" class="form-select form-select-sm" aria-label="Setor de destino">
+      <option value="">Todos os setores</option>
+      {% for s in setores %}<option value="{{ s }}" {% if filtros.setor == s %}selected{% endif %}>{{ s }}</option>{% endfor %}
+    </select>
+    <input type="date" name="data_inicio" value="{{ filtros.data_inicio }}" class="form-control form-control-sm" aria-label="De">
+    <input type="date" name="data_fim" value="{{ filtros.data_fim }}" class="form-control form-control-sm" aria-label="Até">
+    {% if filtrado %}<a href="{{ url_for('movimentacoes.historico') }}" class="btn-link-sutil small ms-1">Limpar filtros</a>{% endif %}
+  </form>
+
+  {% if movimentacoes %}
+  <div class="tabela-rolagem">
+    <table class="tabela">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th class="col-produto">Produto</th>
+          <th>Tipo</th>
+          <th class="direita">Quantidade</th>
+          <th>Setor de destino</th>
+          <th>Registrado por</th>
+          <th>Observação</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for mov in movimentacoes %}
+        <tr>
+          <td class="num texto-2 text-nowrap">{{ mov.data|datahora }}</td>
+          <td>
+            <div class="produto-nome">{{ mov.produto_nome }}</div>
+            <div class="categoria">{{ mov.produto_codigo }}</div>
+          </td>
+          <td>{{ m.selo_tipo(mov.tipo) }}</td>
+          <td class="direita num text-nowrap"><strong>{{ "+" if mov.tipo == "entrada" else "−" }}{{ mov.quantidade|numero }}</strong> <small class="texto-3">{{ mov.produto_unidade }}</small></td>
+          <td>{{ mov.setor or "—" }}</td>
+          <td class="text-nowrap">{{ mov.usuario_nome or mov.responsavel or "—" }}</td>
+          <td class="texto-2 small" style="max-width: 260px">{{ mov.observacao or "—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="painel-rodape paginacao">
+    <span class="num">
+      Mostrando {{ (pagina - 1) * por_pagina + 1 }} a {{ [pagina * por_pagina, total]|min }} de {{ total|numero }}
+    </span>
+    {% if paginas > 1 %}
+    <nav aria-label="Páginas">
+      {% set args = request.args.to_dict() %}
+      <ul class="pagination pagination-sm">
+        <li class="page-item {% if pagina == 1 %}disabled{% endif %}">
+          <a class="page-link" href="{{ url_for('movimentacoes.historico', **dict(args, pagina=pagina - 1)) }}" aria-label="Página anterior"><i class="bi bi-chevron-left"></i></a>
+        </li>
+        {% for n in range(1, paginas + 1) %}
+          {% if n == 1 or n == paginas or (n >= pagina - 1 and n <= pagina + 1) %}
+          <li class="page-item {% if n == pagina %}active{% endif %}"><a class="page-link num" href="{{ url_for('movimentacoes.historico', **dict(args, pagina=n)) }}">{{ n }}</a></li>
+          {% elif n == pagina - 2 or n == pagina + 2 %}
+          <li class="page-item disabled"><span class="page-link">…</span></li>
+          {% endif %}
+        {% endfor %}
+        <li class="page-item {% if pagina == paginas %}disabled{% endif %}">
+          <a class="page-link" href="{{ url_for('movimentacoes.historico', **dict(args, pagina=pagina + 1)) }}" aria-label="Próxima página"><i class="bi bi-chevron-right"></i></a>
+        </li>
+      </ul>
+    </nav>
+    {% endif %}
+  </div>
+  {% elif filtrado %}
+  <div class="vazio">
+    <div class="vazio-icone"><i class="bi bi-search"></i></div>
+    <h3>Nenhuma movimentação com esses filtros</h3>
+    <p>Amplie o período ou tire algum filtro.</p>
+    <a href="{{ url_for('movimentacoes.historico') }}" class="btn btn-contorno">Limpar filtros</a>
+  </div>
+  {% else %}
+  <div class="vazio">
+    <div class="vazio-icone"><i class="bi bi-clock-history"></i></div>
+    <h3>Nenhuma movimentação registrada</h3>
+    <p>As entradas e saídas aparecem aqui assim que forem registradas.</p>
+    <div class="d-flex gap-2 justify-content-center">
+      <a href="{{ url_for('movimentacoes.entrada') }}" class="btn btn-entrada">Registrar entrada</a>
+      <a href="{{ url_for('movimentacoes.saida') }}" class="btn btn-saida">Registrar saída</a>
+    </div>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

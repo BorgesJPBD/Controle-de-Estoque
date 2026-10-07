@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block titulo %}{{ "Editar produto" if produto else "Novo produto" }}{% endblock %}
+{% block conteudo %}
+
+<a href="{{ url_for('produtos.lista') }}" class="voltar"><i class="bi bi-arrow-left"></i>Produtos</a>
+<div class="pagina-cabecalho">
+  <div>
+    <h1>{{ "Editar produto" if produto else "Novo produto" }}</h1>
+    <p>{% if produto %}Código {{ produto.codigo }}, cadastrado em {{ produto.criado_em|data }}.{% else %}Os campos marcados como opcionais podem ficar em branco.{% endif %}</p>
+  </div>
+</div>
+
+<div class="row g-4 align-items-start">
+  <div class="col-lg-8">
+    <form method="post" class="painel" id="formProduto">
+      {{ m.csrf() }}
+      {% if erro %}<div class="px-4 pt-4">{{ m.aviso_erro(erro) }}</div>{% endif %}
+
+      <div class="secao-form">
+        <h3>Identificação</h3>
+        <p>Nome e código precisam ser únicos: o sistema avisa se já existir um produto igual.</p>
+        <div class="row g-3">
+          <div class="col-md-8">
+            <label class="form-label" for="nome">Nome do produto</label>
+            <input type="text" class="form-control" id="nome" name="nome" value="{{ dados.get('nome', '') }}"
+                   required maxlength="100" placeholder="Ex.: Luva de procedimento M (cx 100)" {% if not produto %}autofocus{% endif %}>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="codigo">Código <span class="opcional">(opcional)</span></label>
+            <input type="text" class="form-control text-uppercase" id="codigo" name="codigo" value="{{ dados.get('codigo') or '' }}"
+                   maxlength="30" placeholder="Gerado se vazio" pattern="[A-Za-z0-9][A-Za-z0-9\-_.]*">
+          </div>
+          <div class="col-md-8">
+            <label class="form-label" for="categoria">Categoria</label>
+            <input type="text" class="form-control" id="categoria" name="categoria" value="{{ dados.get('categoria', '') }}"
+                   list="lista-categorias" maxlength="60" placeholder="Ex.: EPI, Curativos, Soluções">
+            <datalist id="lista-categorias">{% for c in categorias %}<option value="{{ c }}">{% endfor %}</datalist>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="unidade">Unidade de medida</label>
+            <input type="text" class="form-control text-uppercase" id="unidade" name="unidade" value="{{ dados.get('unidade', 'UN') }}"
+                   list="lista-unidades" required maxlength="10">
+            <datalist id="lista-unidades">{% for sigla, nome in unidades %}<option value="{{ sigla }}">{{ nome }}</option>{% endfor %}</datalist>
+          </div>
+        </div>
+      </div>
+
+      <div class="secao-form">
+        <h3>Estoque e custo</h3>
+        <p>Quando a quantidade chegar ao estoque mínimo, o produto entra nos alertas de reposição.</p>
+        <div class="row g-3">
+          {% if not produto %}
+          <div class="col-md-4">
+            <label class="form-label" for="quantidade">Quantidade inicial</label>
+            <input type="number" class="form-control" id="quantidade" name="quantidade" min="0" step="1"
+                   value="{{ dados.get('quantidade', 0) }}" data-previa="quantidade">
+          </div>
+          {% endif %}
+          <div class="col-md-4">
+            <label class="form-label" for="estoque_minimo">Estoque mínimo</label>
+            <input type="number" class="form-control" id="estoque_minimo" name="estoque_minimo" min="0" step="1"
+                   value="{{ dados.get('estoque_minimo', 10) }}" required data-previa="minimo">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label" for="preco">Preço unitário <span class="opcional">(R$)</span></label>
+            <input type="number" class="form-control" id="preco" name="preco" min="0" step="0.01"
+                   value="{{ dados.get('preco', '') }}" placeholder="0,00">
+          </div>
+        </div>
+        {% if produto %}
+        <div class="aviso aviso-info mt-3">
+          <i class="bi bi-info-circle-fill"></i>
+          <div>O estoque atual ({{ produto.quantidade|numero }} {{ produto.unidade }}) só muda por
+            <a href="{{ url_for('movimentacoes.entrada', produto=produto.id) }}">entradas</a> e
+            <a href="{{ url_for('movimentacoes.saida', produto=produto.id) }}">saídas</a>, para que o histórico fique completo.</div>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="form-rodape">
+        <button type="submit" class="btn btn-primary">{{ "Salvar alterações" if produto else "Cadastrar produto" }}</button>
+        {% if not produto %}<button type="submit" name="continuar" value="1" class="btn btn-contorno">Cadastrar e adicionar outro</button>{% endif %}
+        <a href="{{ url_for('produtos.lista') }}" class="btn btn-link-sutil ms-sm-auto px-2">Cancelar</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="col-lg-4">
+    <aside class="painel">
+      <div class="painel-cabecalho"><h2>Como o alerta funciona</h2></div>
+      <div class="painel-corpo">
+        <div class="d-flex justify-content-between align-items-baseline mb-2">
+          <span class="texto-2 small">Prévia da régua de estoque</span>
+          <span id="previaSelo">{{ m.selo_status(produto.status if produto else "critico") }}</span>
+        </div>
+        <div class="regua regua-grande" id="previaRegua">
+          <div class="regua-nivel"></div><div class="regua-minimo"></div>
+        </div>
+        <ul class="small texto-2 mt-4 mb-0 ps-3 d-grid gap-2">
+          <li><strong class="text-body">Crítico:</strong> quantidade igual ou abaixo do mínimo. Aparece nos alertas.</li>
+          <li><strong class="text-body">Atenção:</strong> até 50% acima do mínimo. Hora de planejar a compra.</li>
+          <li><strong class="text-body">Normal:</strong> folga confortável.</li>
+        </ul>
+        <p class="small texto-3 mt-3 mb-0">O traço escuro na régua marca o estoque mínimo.</p>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var qtdAtual = {{ produto.quantidade if produto else "null" }};
+  var campoQtd = document.querySelector("[data-previa=quantidade]");
+  var campoMin = document.querySelector("[data-previa=minimo]");
+  var regua = document.getElementById("previaRegua");
+  var selo = document.getElementById("previaSelo");
+  var selos = {
+    critico: '<span class="selo selo-critico"><i class="bi bi-exclamation-octagon-fill"></i>Crítico</span>',
+    atencao: '<span class="selo selo-atencao"><i class="bi bi-exclamation-triangle-fill"></i>Atenção</span>',
+    normal: '<span class="selo selo-normal"><i class="bi bi-check-circle"></i>Normal</span>'
+  };
+  function atualizar() {
+    var q = qtdAtual !== null ? qtdAtual : parseInt(campoQtd.value || "0", 10);
+    var min = parseInt(campoMin.value || "0", 10);
+    var status = q <= min ? "critico" : (q <= min * 1.5 ? "atencao" : "normal");
+    var escala = Math.max(min * 3, 1);
+    regua.className = "regua regua-grande " + (status === "normal" ? "" : status);
+    regua.querySelector(".regua-nivel").style.width = Math.min(q / escala, 1) * 100 + "%";
+    var marca = regua.querySelector(".regua-minimo");
+    marca.style.left = "33.3%";
+    marca.style.display = min > 0 ? "" : "none";
+    selo.innerHTML = selos[status];
+  }
+  [campoQtd, campoMin].forEach(function (c) { if (c) c.addEventListener("input", atualizar); });
+  atualizar();
+})();
+</script>
+{% endblock %}

@@ -7,13 +7,16 @@ TIPOS_VALIDOS = ("entrada", "saida")
 class Movimentacao:
     def __init__(self, produto_id: int, tipo: str, quantidade: int,
                  responsavel: str = "", observacao: str = "",
-                 mov_id: int = None, data: str = None):
+                 mov_id: int = None, data: str = None,
+                 setor: str = "", usuario_id: int = None):
         self._id = mov_id
         self._produto_id = None
         self._tipo = None
         self._quantidade = None
         self._responsavel = None
         self._observacao = None
+        self._setor = None
+        self._usuario_id = usuario_id
         self._data = data or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         self.produto_id = produto_id
@@ -21,6 +24,7 @@ class Movimentacao:
         self.quantidade = quantidade
         self.responsavel = responsavel
         self.observacao = observacao
+        self.setor = setor
 
     # ── id ────────────────────────────────────────────────────────────────────
     @property
@@ -34,9 +38,12 @@ class Movimentacao:
 
     @produto_id.setter
     def produto_id(self, value: int):
-        value = int(value)
+        try:
+            value = int(value)
+        except (TypeError, ValueError):
+            raise ValueError("Selecione um produto.")
         if value <= 0:
-            raise ValueError("produto_id inválido.")
+            raise ValueError("Selecione um produto.")
         self._produto_id = value
 
     # ── tipo ──────────────────────────────────────────────────────────────────
@@ -58,7 +65,10 @@ class Movimentacao:
 
     @quantidade.setter
     def quantidade(self, value: int):
-        value = int(value)
+        try:
+            value = int(value)
+        except (TypeError, ValueError):
+            raise ValueError("Informe uma quantidade válida.")
         if value <= 0:
             raise ValueError("Quantidade deve ser maior que zero.")
         self._quantidade = value
@@ -79,7 +89,27 @@ class Movimentacao:
 
     @observacao.setter
     def observacao(self, value: str):
-        self._observacao = value.strip() if value else ""
+        value = value.strip() if value else ""
+        if len(value) > 500:
+            raise ValueError("A observação deve ter no máximo 500 caracteres.")
+        self._observacao = value
+
+    # ── setor de destino ──────────────────────────────────────────────────────
+    @property
+    def setor(self):
+        return self._setor
+
+    @setor.setter
+    def setor(self, value: str):
+        value = " ".join((value or "").split())
+        if len(value) > 60:
+            raise ValueError("O setor deve ter no máximo 60 caracteres.")
+        self._setor = value
+
+    # ── usuário que registrou ─────────────────────────────────────────────────
+    @property
+    def usuario_id(self):
+        return self._usuario_id
 
     @property
     def data(self):
@@ -98,6 +128,8 @@ class Movimentacao:
             "quantidade": self._quantidade,
             "responsavel": self._responsavel,
             "observacao": self._observacao,
+            "setor": self._setor,
+            "usuario_id": self._usuario_id,
             "data": self._data,
         }
 

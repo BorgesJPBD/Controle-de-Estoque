@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block titulo %}Meu perfil{% endblock %}
+{% block conteudo %}
+
+<div class="pagina-cabecalho">
+  <div class="d-flex align-items-center gap-3">
+    <span class="avatar avatar-lg">{{ current_user.iniciais }}</span>
+    <div>
+      <h1>{{ current_user.nome }}</h1>
+      <p class="mt-1">{{ current_user.email }}, {{ current_user.perfil_nome|lower }}.</p>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4" style="max-width: 1040px">
+  <div class="col-lg-6">
+    <form method="post" class="painel h-100 d-flex flex-column">
+      {{ m.csrf() }}
+      <input type="hidden" name="acao" value="dados">
+      <div class="secao-form flex-grow-1">
+        <h3>Seus dados</h3>
+        <p>O nome aparece no histórico das movimentações que você registra.</p>
+        {{ m.aviso_erro(erro_dados) }}
+        <div class="mb-3">
+          <label class="form-label" for="nome">Nome completo</label>
+          <input type="text" class="form-control" id="nome" name="nome" value="{{ current_user.nome }}" required maxlength="100">
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="email">E-mail</label>
+          <input type="email" class="form-control" id="email" value="{{ current_user.email }}" disabled>
+          <div class="form-text">Para trocar o e-mail, fale com um administrador.</div>
+        </div>
+        <div>
+          <label class="form-label" for="setor">Setor <span class="opcional">(opcional)</span></label>
+          <input type="text" class="form-control" id="setor" name="setor" list="lista-setores" value="{{ current_user.setor }}" maxlength="60">
+          <datalist id="lista-setores">{% for s in setores %}<option value="{{ s }}">{% endfor %}</datalist>
+        </div>
+      </div>
+      <div class="form-rodape"><button type="submit" class="btn btn-primary">Salvar dados</button></div>
+    </form>
+  </div>
+
+  <div class="col-lg-6">
+    <form method="post" class="painel h-100 d-flex flex-column">
+      {{ m.csrf() }}
+      <input type="hidden" name="acao" value="senha">
+      <div class="secao-form flex-grow-1">
+        <h3>Trocar senha</h3>
+        <p>Depois de 5 tentativas erradas, a conta fica bloqueada por 10 minutos.</p>
+        {{ m.aviso_erro(erro_senha) }}
+        {{ m.campo_senha("senha_atual", "Senha atual") }}
+        {{ m.campo_senha("nova_senha", "Nova senha", autocomplete="new-password", forca=true, ajuda="Mínimo de 8 caracteres, com letras e números.") }}
+        {{ m.campo_senha("confirmacao", "Confirme a nova senha", autocomplete="new-password") }}
+      </div>
+      <div class="form-rodape"><button type="submit" class="btn btn-primary">Trocar senha</button></div>
+    </form>
+  </div>
+</div>
+{% endblock %}

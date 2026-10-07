@@ -1,0 +1,25 @@
+{% extends "auth/_base_acesso.html" %}
+{% block titulo %}Configuração inicial{% endblock %}
+{% block conteudo %}
+<h2>Configuração inicial</h2>
+<p class="sub">Crie a conta do administrador. Ela poderá aprovar cadastros, gerenciar usuários e excluir produtos.</p>
+
+{{ m.aviso_erro(erro) }}
+
+<form method="post">
+  {{ m.csrf() }}
+  <div class="mb-3">
+    <label class="form-label" for="nome">Nome completo</label>
+    <input type="text" class="form-control" id="nome" name="nome" value="{{ dados.get('nome', '') }}"
+           autocomplete="name" required minlength="3" maxlength="100" autofocus>
+  </div>
+  <div class="mb-3">
+    <label class="form-label" for="email">E-mail</label>
+    <input type="email" class="form-control" id="email" name="email" value="{{ dados.get('email', '') }}"
+           autocomplete="email" required>
+  </div>
+  {{ m.campo_senha("senha", "Senha", autocomplete="new-password", forca=true, ajuda="Mínimo de 8 caracteres, com letras e números.") }}
+  {{ m.campo_senha("confirmacao", "Confirme a senha", autocomplete="new-password") }}
+  <button type="submit" class="btn btn-primary btn-lg mt-2">Criar conta e entrar</button>
+</form>
+{% endblock %}

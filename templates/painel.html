@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block titulo %}Painel{% endblock %}
+{% block conteudo %}
+
+<div class="pagina-cabecalho">
+  <div>
+    <h1>{{ saudacao }}, {{ current_user.primeiro_nome }}</h1>
+    <p>
+      {{ agora|extenso }}.
+      {% if resumo.total_produtos %}
+        Hoje: {{ hoje.entradas }} {{ "entrada" if hoje.entradas == 1 else "entradas" }}
+        e {{ hoje.saidas }} {{ "saída registrada" if hoje.saidas == 1 else "saídas registradas" }}.
+      {% endif %}
+    </p>
+  </div>
+  {% if resumo.total_produtos %}
+  <div class="pagina-acoes">
+    <a href="{{ url_for('movimentacoes.entrada') }}" class="btn btn-entrada"><i class="bi bi-box-arrow-in-down"></i>Registrar entrada</a>
+    <a href="{{ url_for('movimentacoes.saida') }}" class="btn btn-saida"><i class="bi bi-box-arrow-up"></i>Registrar saída</a>
+  </div>
+  {% endif %}
+</div>
+
+{% if not resumo.total_produtos %}
+  {# ── Estoque vazio: primeiro uso ── #}
+  <section class="painel">
+    <div class="vazio" style="max-width: 600px; padding: 64px 24px;">
+      <div class="vazio-icone"><i class="bi bi-box-seam"></i></div>
+      <h3>O almoxarifado ainda está vazio</h3>
+      <p>Cadastre os materiais que o hospital guarda, com o estoque mínimo de cada um. A partir daí, o painel mostra o consumo por setor e avisa o que precisa de reposição.</p>
+      <div class="d-flex gap-2 justify-content-center flex-wrap">
+        <a href="{{ url_for('produtos.novo') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i>Cadastrar produto</a>
+        {% if current_user.is_admin %}
+        <form method="post" action="{{ url_for('painel.carregar_demo') }}"
+              data-confirmar="Serão criados 20 produtos hospitalares com 4 semanas de movimentações de exemplo. Use para apresentações e testes."
+              data-confirmar-titulo="Carregar dados de demonstração?" data-confirmar-botao="Carregar dados" data-confirmar-estilo="btn-primary">
+          {{ m.csrf() }}
+          <button type="submit" class="btn btn-contorno"><i class="bi bi-magic"></i>Carregar dados de demonstração</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+{% else %}
+
+  {# ── Indicadores ── #}
+  <section class="painel indicadores mb-4" aria-label="Indicadores do estoque">
+    <div class="indicador">
+      <div class="indicador-rotulo"><i class="bi bi-box-seam"></i>Produtos cadastrados</div>
+      <div class="indicador-valor num">{{ resumo.total_produtos|numero }}</div>
+      <div class="indicador-extra">em {{ resumo.total_itens|numero }} unidades no estoque</div>
+    </div>
+    <div class="indicador">
+      <div class="indicador-rotulo"><i class="bi bi-cash-stack"></i>Valor em estoque</div>
+      <div class="indicador-valor num">{{ resumo.valor_total|moeda }}</div>
+      <div class="indicador-extra">pelo preço de cadastro</div>
+    </div>
+    <a class="indicador {% if resumo.criticos %}tem-critico{% endif %}" href="{{ url_for('produtos.alertas') }}">
+      <div class="indicador-rotulo"><i class="bi bi-exclamation-octagon"></i>Itens críticos</div>
+      <div class="indicador-valor num">{{ resumo.criticos }}</div>
+      <div class="indicador-extra">{{ "no estoque mínimo ou abaixo" if resumo.criticos else "nenhum abaixo do mínimo" }}</div>
+    </a>
+    <a class="indicador" href="{{ url_for('produtos.lista', status='atencao') }}">
+      <div class="indicador-rotulo"><i class="bi bi-exclamation-triangle"></i>Em atenção</div>
+      <div class="indicador-valor num">{{ resumo.atencao }}</div>
+      <div class="indicador-extra">até 50% acima do mínimo</div>
+    </a>
+  </section>
+
+  <div class="row g-4">
+    <div class="col-xl-8 d-flex flex-column gap-4">
+    {# ── Gráfico de movimentações ── #}
+      <section class="painel">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Movimentações por dia</h2>
+            <div class="meta">Registros dos últimos 14 dias</div>
+          </div>
+          <div class="legenda" aria-hidden="true">
+            <span><i style="background: var(--entrada)"></i>Entradas</span>
+            <span><i style="background: var(--saida)"></i>Saídas</span>
+          </div>
+        </div>
+        <div class="painel-corpo">
+          <div class="grafico-area"><canvas id="graficoDias" role="img" aria-label="Gráfico de entradas e saídas por dia"></canvas></div>
+          <table class="visually-hidden">
+            <caption>Movimentações por dia</caption>
+            <thead><tr><th>Dia</th><th>Entradas</th><th>Saídas</th></tr></thead>
+            <tbody>
+              {% for i in range(grafico.rotulos|length) %}
+              <tr><td>{{ grafico.rotulos[i] }}</td><td>{{ grafico.entradas[i] }}</td><td>{{ grafico.saidas[i] }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    {# ── Consumo por setor ── #}
+      <section class="painel">
+        <div class="painel-cabecalho">
+          <div>
+            <h2>Consumo por setor</h2>
+            <div class="meta">Valor das saídas nos últimos 30 dias</div>
+          </div>
+        </div>
+        <div class="painel-corpo">
+          {% for s in por_setor %}
+          <div class="barra-setor" title="{{ s.setor }}: {{ s.quantidade|numero }} itens, {{ s.valor|moeda }}">
+            <div class="nome">{{ s.setor }}</div>
+            <div class="trilho"><div class="preenchido" style="width: {{ (s.valor|float / max_setor * 100) if max_setor else 0 }}%"></div></div>
+            <div class="valor num">{{ s.valor|moeda }}</div>
+          </div>
+          {% else %}
+          <p class="texto-3 mb-0">Nenhuma saída registrada nos últimos 30 dias.</p>
+          {% endfor %}
+        </div>
+      </section>
+    </div>
+    <div class="col-xl-4 d-flex flex-column gap-4">
+    {# ── Itens para repor ── #}
+      <section class="painel d-flex flex-column">
+        <div class="painel-cabecalho">
+          <h2>Itens para repor</h2>
+          {% if resumo.criticos %}<span class="selo selo-critico"><i class="bi bi-exclamation-octagon-fill"></i>{{ resumo.criticos }}</span>{% endif %}
+        </div>
+        {% if criticos %}
+        <ul class="lista-limpa flex-grow-1">
+          {% for p in criticos %}
+          <li class="item-critico">
+            <div class="min-w-0" style="min-width:0">
+              <div class="nome">{{ p.nome }}</div>
+              <div class="detalhe num">{{ p.quantidade|numero }} {{ p.unidade }} em estoque, mínimo {{ p.estoque_minimo|numero }}</div>
+            </div>
+            <a href="{{ url_for('movimentacoes.entrada', produto=p.id, quantidade=p.reposicao_sugerida) }}" class="btn btn-sm btn-contorno">Repor</a>
+            {{ m.regua(p) }}
+          </li>
+          {% endfor %}
+        </ul>
+        <div class="painel-rodape"><a href="{{ url_for('produtos.alertas') }}" class="fw-semibold">Ver todos os alertas</a></div>
+        {% else %}
+        <div class="vazio">
+          <div class="vazio-icone"><i class="bi bi-check2-circle"></i></div>
+          <h3>Nada para repor agora</h3>
+          <p class="mb-0">Todos os produtos estão acima do estoque mínimo.</p>
+        </div>
+        {% endif %}
+      </section>
+    {# ── Últimas movimentações ── #}
+      <section class="painel d-flex flex-column">
+        <div class="painel-cabecalho">
+          <h2>Últimas movimentações</h2>
+        </div>
+        {% if recentes %}
+        <ul class="lista-limpa flex-grow-1">
+          {% for mov in recentes %}
+          <li class="mov-item">
+            <span class="mov-icone {{ mov.tipo }}" aria-hidden="true">
+              <i class="bi {{ 'bi-box-arrow-in-down' if mov.tipo == 'entrada' else 'bi-box-arrow-up' }}"></i>
+            </span>
+            <div class="mov-texto">
+              <div class="nome">{{ mov.produto_nome }}</div>
+              <div class="detalhe">
+                {{ "Entrada" if mov.tipo == "entrada" else (mov.setor or "Saída") }}, {{ mov.data|quando }}
+              </div>
+            </div>
+            <div class="mov-qtd num">{{ "+" if mov.tipo == "entrada" else "−" }}{{ mov.quantidade|numero }} <small class="texto-3 fw-normal">{{ mov.produto_unidade }}</small></div>
+          </li>
+          {% endfor %}
+        </ul>
+        <div class="painel-rodape"><a href="{{ url_for('movimentacoes.historico') }}" class="fw-semibold">Abrir histórico completo</a></div>
+        {% else %}
+        <div class="vazio">
+          <div class="vazio-icone"><i class="bi bi-clock-history"></i></div>
+          <h3>Nenhuma movimentação ainda</h3>
+          <p class="mb-0">As entradas e saídas registradas aparecem aqui.</p>
+        </div>
+        {% endif %}
+      </section>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if resumo.total_produtos %}
+<script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.js') }}"></script>
+<script>
+(function () {
+  var css = getComputedStyle(document.documentElement);
+  var cor = function (v) { return css.getPropertyValue(v).trim(); };
+  var dados = {{ grafico|tojson }};
+  var semMovimento = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  Chart.defaults.font.family = css.getPropertyValue("--bs-body-font-family");
+  Chart.defaults.font.size = 12;
+  Chart.defaults.color = cor("--tinta-3");
+
+  var barra = { borderRadius: { topLeft: 4, topRight: 4 }, borderSkipped: "bottom",
+                maxBarThickness: 14, categoryPercentage: 0.72, barPercentage: 0.88 };
+
+  new Chart(document.getElementById("graficoDias"), {
+    type: "bar",
+    data: {
+      labels: dados.rotulos,
+      datasets: [
+        Object.assign({ label: "Entradas", data: dados.entradas, backgroundColor: cor("--entrada") }, barra),
+        Object.assign({ label: "Saídas", data: dados.saidas, backgroundColor: cor("--saida") }, barra)
+      ]
+    },
+    options: {
+      maintainAspectRatio: false,
+      animation: semMovimento ? false : { duration: 500 },
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: cor("--scrub-noite"),
+          padding: 10, cornerRadius: 8, boxPadding: 4, usePointStyle: true,
+          titleFont: { weight: "700" },
+          callbacks: {
+            title: function (itens) { return "Dia " + itens[0].label; },
+            label: function (c) { return " " + c.dataset.label + ": " + c.parsed.y + (c.parsed.y === 1 ? " registro" : " registros"); }
+          }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, border: { color: cor("--linha-forte") }, ticks: { maxRotation: 0, autoSkipPadding: 12 } },
+        y: { beginAtZero: true, border: { display: false }, grid: { color: "#e6ecea" }, ticks: { precision: 0, maxTicksLimit: 5 } }
+      }
+    }
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

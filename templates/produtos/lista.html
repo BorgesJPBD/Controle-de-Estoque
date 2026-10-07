@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block titulo %}Produtos{% endblock %}
+{% block conteudo %}
+
+<div class="pagina-cabecalho">
+  <div>
+    <h1>Produtos</h1>
+    <p>{{ resumo.total_produtos|numero }} {{ "produto cadastrado" if resumo.total_produtos == 1 else "produtos cadastrados" }}, somando {{ resumo.valor_total|moeda }} em estoque.</p>
+  </div>
+  <div class="pagina-acoes">
+    <a href="{{ url_for('relatorios.baixar', relatorio='estoque', **filtros) }}" class="btn btn-contorno">
+      <i class="bi bi-download"></i>Exportar CSV
+    </a>
+    <a href="{{ url_for('produtos.novo') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i>Novo produto</a>
+  </div>
+</div>
+
+<section class="painel">
+  <form class="filtros" method="get" data-auto-enviar role="search">
+    <div class="busca">
+      <i class="bi bi-search"></i>
+      <input type="search" name="busca" value="{{ filtros.busca }}" class="form-control form-control-sm"
+             placeholder="Buscar por nome ou código" aria-label="Buscar por nome ou código">
+    </div>
+    <select name="categoria" class="form-select form-select-sm" aria-label="Categoria">
+      <option value="">Todas as categorias</option>
+      {% for c in categorias %}<option value="{{ c }}" {% if filtros.categoria == c %}selected{% endif %}>{{ c }}</option>{% endfor %}
+    </select>
+    <select name="status" class="form-select form-select-sm" aria-label="Situação">
+      <option value="">Todas as situações</option>
+      <option value="critico" {% if filtros.status == 'critico' %}selected{% endif %}>Crítico</option>
+      <option value="atencao" {% if filtros.status == 'atencao' %}selected{% endif %}>Atenção</option>
+      <option value="normal" {% if filtros.status == 'normal' %}selected{% endif %}>Normal</option>
+    </select>
+    {% if filtrado %}<a href="{{ url_for('produtos.lista') }}" class="btn-link-sutil small ms-1">Limpar filtros</a>{% endif %}
+    <span class="ms-auto small texto-3">{{ produtos|length }} {{ "resultado" if produtos|length == 1 else "resultados" }}</span>
+  </form>
+
+  {% if produtos %}
+  <div class="tabela-rolagem">
+    <table class="tabela">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <th class="col-produto">Produto</th>
+          <th>Estoque atual</th>
+          <th class="direita">Mínimo</th>
+          <th class="direita">Valor em estoque</th>
+          <th>Situação</th>
+          <th><span class="visually-hidden">Ações</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in produtos %}
+        <tr class="{% if p.status == 'critico' %}linha-critica{% endif %}">
+          <td><span class="codigo">{{ p.codigo }}</span></td>
+          <td>
+            <div class="produto-nome">{{ p.nome }}</div>
+            <div class="categoria">{{ p.categoria }}</div>
+          </td>
+          <td>
+            <div class="estoque-celula">
+              {{ m.regua(p) }}
+              <span class="estoque-qtd num">{{ p.quantidade|numero }} <small>{{ p.unidade }}</small></span>
+            </div>
+          </td>
+          <td class="direita num texto-2">{{ p.estoque_minimo|numero }}</td>
+          <td class="direita num">
+            <div class="fw-650">{{ p.valor_total|moeda }}</div>
+            <div class="categoria">{{ p.preco|moeda }} / {{ p.unidade }}</div>
+          </td>
+          <td>{{ m.selo_status(p.status) }}</td>
+          <td>
+            <div class="acoes-linha">
+              <a href="{{ url_for('movimentacoes.entrada', produto=p.id) }}" class="btn-icone" title="Registrar entrada" aria-label="Registrar entrada de {{ p.nome }}"><i class="bi bi-box-arrow-in-down"></i></a>
+              <a href="{{ url_for('movimentacoes.saida', produto=p.id) }}" class="btn-icone" title="Registrar saída" aria-label="Registrar saída de {{ p.nome }}"><i class="bi bi-box-arrow-up"></i></a>
+              <a href="{{ url_for('produtos.editar', produto_id=p.id) }}" class="btn-icone" title="Editar" aria-label="Editar {{ p.nome }}"><i class="bi bi-pencil"></i></a>
+              {% if current_user.is_admin %}
+              <form method="post" action="{{ url_for('produtos.excluir', produto_id=p.id) }}"
+                    data-confirmar="“{{ p.nome }}” e todo o histórico de movimentações dele serão apagados. Essa ação não pode ser desfeita."
+                    data-confirmar-titulo="Excluir produto?" data-confirmar-botao="Excluir produto">
+                {{ m.csrf() }}
+                <button type="submit" class="btn-icone perigo" title="Excluir" aria-label="Excluir {{ p.nome }}"><i class="bi bi-trash3"></i></button>
+              </form>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% elif filtrado %}
+  <div class="vazio">
+    <div class="vazio-icone"><i class="bi bi-search"></i></div>
+    <h3>Nenhum produto encontrado</h3>
+    <p>Confira a grafia ou tire algum filtro.</p>
+    <a href="{{ url_for('produtos.lista') }}" class="btn btn-contorno">Limpar filtros</a>
+  </div>
+  {% else %}
+  <div class="vazio">
+    <div class="vazio-icone"><i class="bi bi-box-seam"></i></div>
+    <h3>Nenhum produto cadastrado</h3>
+    <p>Cadastre o primeiro material do almoxarifado, com o estoque mínimo que deve disparar o alerta de reposição.</p>
+    <a href="{{ url_for('produtos.novo') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i>Cadastrar produto</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

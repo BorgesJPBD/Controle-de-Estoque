@@ -1,0 +1,27 @@
+{% extends "auth/_base_acesso.html" %}
+{% block titulo %}Entrar{% endblock %}
+{% block conteudo %}
+<h2>Entrar</h2>
+<p class="sub">Use o e-mail e a senha da sua conta.</p>
+
+{{ m.aviso_erro(erro) }}
+
+<form method="post" novalidate>
+  {{ m.csrf() }}
+  <div class="mb-3">
+    <label class="form-label" for="email">E-mail</label>
+    <input type="email" class="form-control" id="email" name="email" value="{{ email }}"
+           autocomplete="username" required {% if not email %}autofocus{% endif %}>
+  </div>
+  {{ m.campo_senha("senha", "Senha") }}
+  <div class="form-check mb-4">
+    <input class="form-check-input" type="checkbox" id="lembrar" name="lembrar" value="1">
+    <label class="form-check-label" for="lembrar">Manter conectado neste computador</label>
+  </div>
+  <button type="submit" class="btn btn-primary btn-lg">Entrar</button>
+</form>
+
+<div class="acesso-troca">
+  Ainda não tem acesso? <a href="{{ url_for('auth.cadastro') }}" class="fw-semibold">Solicitar cadastro</a>
+</div>
+{% endblock %}

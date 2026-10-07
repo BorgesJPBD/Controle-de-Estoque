@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block titulo %}Relatórios{% endblock %}
+{% block conteudo %}
+
+<div class="pagina-cabecalho">
+  <div>
+    <h1>Relatórios</h1>
+    <p>Arquivos CSV para consulta e prestação de contas. Eles abrem direto no Excel ou no Google Planilhas.</p>
+  </div>
+</div>
+
+<section class="painel" style="max-width: 880px">
+  <div class="relatorio">
+    <div class="relatorio-icone"><i class="bi bi-boxes"></i></div>
+    <div>
+      <h3>Estoque completo</h3>
+      <p>Os {{ resumo.total_produtos|numero }} produtos com código, quantidade, estoque mínimo, preço, valor total e situação.</p>
+    </div>
+    <a href="{{ url_for('relatorios.baixar', relatorio='estoque') }}" class="btn btn-contorno"><i class="bi bi-download"></i>Baixar</a>
+  </div>
+  <div class="relatorio">
+    <div class="relatorio-icone" style="background: var(--critico-fundo); color: var(--critico)"><i class="bi bi-cart-plus"></i></div>
+    <div>
+      <h3>Lista de reposição</h3>
+      <p>{{ resumo.criticos }} {{ "item" if resumo.criticos == 1 else "itens" }} no estoque mínimo ou abaixo, com o que falta e a quantidade sugerida para compra.</p>
+    </div>
+    <a href="{{ url_for('relatorios.baixar', relatorio='estoque-baixo') }}" class="btn btn-contorno"><i class="bi bi-download"></i>Baixar</a>
+  </div>
+  <div class="relatorio">
+    <div class="relatorio-icone" style="background: var(--saida-fundo); color: var(--saida)"><i class="bi bi-arrow-left-right"></i></div>
+    <div>
+      <h3>Movimentações</h3>
+      <p>{{ total_movimentacoes|numero }} entradas e saídas com data, setor de destino e quem registrou. Para um período ou setor específico, filtre no <a href="{{ url_for('movimentacoes.historico') }}">histórico</a> e exporte de lá.</p>
+    </div>
+    <a href="{{ url_for('relatorios.baixar', relatorio='movimentacoes') }}" class="btn btn-contorno"><i class="bi bi-download"></i>Baixar</a>
+  </div>
+  <div class="relatorio">
+    <div class="relatorio-icone"><i class="bi bi-pie-chart"></i></div>
+    <div>
+      <h3>Resumo por categoria</h3>
+      <p>Quantidade de produtos, unidades, valor em estoque e itens críticos de cada categoria.</p>
+    </div>
+    <a href="{{ url_for('relatorios.baixar', relatorio='categorias') }}" class="btn btn-contorno"><i class="bi bi-download"></i>Baixar</a>
+  </div>
+</section>
+{% endblock %}

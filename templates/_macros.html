@@ -1,0 +1,51 @@
+{# ── Símbolo da marca: cruz hospitalar sobre a prateleira ── #}
+{% macro simbolo(fundo="#8fd8c4", traco="#0c3a35") -%}
+<svg class="marca-simbolo" viewBox="0 0 36 36" aria-hidden="true" focusable="false">
+  <rect width="36" height="36" rx="9" fill="{{ fundo }}"/>
+  <path d="M18 8.5v13M11.5 15h13" stroke="{{ traco }}" stroke-width="4.2" stroke-linecap="round"/>
+  <path d="M9.5 27.5h17" stroke="{{ traco }}" stroke-width="2.6" stroke-linecap="round"/>
+</svg>
+{%- endmacro %}
+
+{# ── Régua de estoque: barra de nível com a marca do estoque mínimo ── #}
+{% macro regua(p, grande=false) -%}
+<div class="regua {{ p.status }}{% if grande %} regua-grande{% endif %}" role="img"
+     aria-label="{{ p.quantidade }} de estoque, mínimo {{ p.estoque_minimo }}">
+  <div class="regua-nivel" style="width: {{ p.nivel }}%"></div>
+  {% if p.estoque_minimo > 0 %}<div class="regua-minimo" style="left: {{ p.marca_minimo }}%"></div>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro selo_status(status) -%}
+{% if status == "critico" %}<span class="selo selo-critico"><i class="bi bi-exclamation-octagon-fill"></i>Crítico</span>
+{% elif status == "atencao" %}<span class="selo selo-atencao"><i class="bi bi-exclamation-triangle-fill"></i>Atenção</span>
+{% else %}<span class="selo selo-normal"><i class="bi bi-check-circle"></i>Normal</span>{% endif %}
+{%- endmacro %}
+
+{% macro selo_tipo(tipo) -%}
+{% if tipo == "entrada" %}<span class="selo selo-entrada"><i class="bi bi-box-arrow-in-down"></i>Entrada</span>
+{% else %}<span class="selo selo-saida"><i class="bi bi-box-arrow-up"></i>Saída</span>{% endif %}
+{%- endmacro %}
+
+{# ── Campo de senha com botão de mostrar/ocultar ── #}
+{% macro campo_senha(nome, rotulo, autocomplete="current-password", forca=false, ajuda=none, obrigatorio=true) -%}
+<div class="mb-3">
+  <label class="form-label" for="{{ nome }}">{{ rotulo }}</label>
+  <div class="campo-senha">
+    <input type="password" class="form-control" id="{{ nome }}" name="{{ nome }}"
+           autocomplete="{{ autocomplete }}" {% if obrigatorio %}required{% endif %}
+           {% if forca %}data-forca="forca-{{ nome }}" minlength="8"{% endif %}>
+    <button type="button" class="mostrar-senha" data-mostrar-senha="{{ nome }}" aria-label="Mostrar senha">
+      <i class="bi bi-eye"></i>
+    </button>
+  </div>
+  {% if forca %}<div class="forca-senha" id="forca-{{ nome }}" data-nivel="0" aria-hidden="true"><span></span><span></span><span></span><span></span></div>{% endif %}
+  {% if ajuda %}<div class="form-text">{{ ajuda }}</div>{% endif %}
+</div>
+{%- endmacro %}
+
+{% macro aviso_erro(erro) -%}
+{% if erro %}<div class="aviso aviso-erro mb-3" role="alert"><i class="bi bi-x-octagon-fill"></i><div>{{ erro }}</div></div>{% endif %}
+{%- endmacro %}
+
+{% macro csrf() -%}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{%- endmacro %}

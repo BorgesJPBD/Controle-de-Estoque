@@ -1,3 +1,3 @@
-from .service import ProdutoService, MovimentacaoService
+from .service import ProdutoService, MovimentacaoService, PainelService, UsuarioService, saudacao
 
-__all__ = ["ProdutoService", "MovimentacaoService"]
+__all__ = ["ProdutoService", "MovimentacaoService", "PainelService", "UsuarioService", "saudacao"]

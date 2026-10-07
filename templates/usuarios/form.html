@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block titulo %}{{ "Editar usuário" if usuario else "Novo usuário" }}{% endblock %}
+{% block conteudo %}
+
+<a href="{{ url_for('usuarios.lista') }}" class="voltar"><i class="bi bi-arrow-left"></i>Usuários</a>
+<div class="pagina-cabecalho">
+  <div>
+    <h1>{{ usuario.nome if usuario else "Novo usuário" }}</h1>
+    <p>{% if usuario %}Conta criada em {{ usuario.criado_em|data }}.{% else %}A conta já nasce ativa. Combine a senha inicial com a pessoa e peça para ela trocar em “Meu perfil”.{% endif %}</p>
+  </div>
+</div>
+
+{% set editando_a_si = usuario and usuario.id == current_user.id %}
+<form method="post" class="painel" style="max-width: 760px">
+  {{ m.csrf() }}
+  {% if erro %}<div class="px-4 pt-4">{{ m.aviso_erro(erro) }}</div>{% endif %}
+
+  <div class="secao-form">
+    <h3>Dados pessoais</h3>
+    <p>O nome aparece no histórico de cada movimentação registrada pela pessoa.</p>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label" for="nome">Nome completo</label>
+        <input type="text" class="form-control" id="nome" name="nome" value="{{ dados.get('nome', '') }}" required maxlength="100">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="email">E-mail</label>
+        <input type="email" class="form-control" id="email" name="email" value="{{ dados.get('email', '') }}" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" for="setor">Setor <span class="opcional">(opcional)</span></label>
+        <input type="text" class="form-control" id="setor" name="setor" list="lista-setores" value="{{ dados.get('setor', '') }}" maxlength="60">
+        <datalist id="lista-setores">{% for s in setores %}<option value="{{ s }}">{% endfor %}</datalist>
+      </div>
+    </div>
+  </div>
+
+  <div class="secao-form">
+    <h3>Acesso</h3>
+    <p>Almoxarifes cadastram produtos e registram movimentações. Administradores também gerenciam usuários e excluem produtos.</p>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label" for="perfil">Perfil</label>
+        <select class="form-select" id="perfil" name="perfil">
+          {% for chave, nome in perfis.items() %}<option value="{{ chave }}" {% if dados.get('perfil') == chave %}selected{% endif %}>{{ nome }}</option>{% endfor %}
+        </select>
+      </div>
+      {% if usuario %}
+      <div class="col-md-6">
+        <label class="form-label" for="status">Situação</label>
+        {% if editando_a_si %}
+        <input type="hidden" name="status" value="ativo">
+        <input type="text" class="form-control" id="status" value="Ativo" disabled>
+        <div class="form-text">Você não pode desativar a própria conta.</div>
+        {% else %}
+        <select class="form-select" id="status" name="status">
+          {% for chave, nome in status.items() %}<option value="{{ chave }}" {% if dados.get('status') == chave %}selected{% endif %}>{{ nome }}</option>{% endfor %}
+        </select>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="secao-form">
+    {% if usuario %}
+    <h3>Redefinir senha</h3>
+    <p>Preencha só se a pessoa esqueceu a senha. Deixe em branco para manter a atual.</p>
+    <div class="row g-3"><div class="col-md-6">
+      {{ m.campo_senha("nova_senha", "Nova senha", autocomplete="new-password", forca=true, obrigatorio=false, ajuda="Mínimo de 8 caracteres, com letras e números.") }}
+    </div></div>
+    {% else %}
+    <h3>Senha inicial</h3>
+    <p>Mínimo de 8 caracteres, com letras e números.</p>
+    <div class="row g-3">
+      <div class="col-md-6">{{ m.campo_senha("senha", "Senha", autocomplete="new-password", forca=true) }}</div>
+      <div class="col-md-6">{{ m.campo_senha("confirmacao", "Confirme a senha", autocomplete="new-password") }}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="form-rodape">
+    <button type="submit" class="btn btn-primary">{{ "Salvar alterações" if usuario else "Criar usuário" }}</button>
+    <a href="{{ url_for('usuarios.lista') }}" class="btn btn-link-sutil ms-sm-auto px-2">Cancelar</a>
+  </div>
+</form>
+{% endblock %}

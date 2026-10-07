@@ -1,53 +1,58 @@
 {% extends "base.html" %}
-{% block content %}
+{% block titulo %}Alertas{% endblock %}
+{% block conteudo %}
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h4 class="fw-bold mb-0">Alertas de Estoque Baixo</h4>
-</div>
-
-{% if produtos %}
-<div class="alert d-flex align-items-center gap-2 mb-4" style="background:#fff3e0;border:1px solid #ffb74d;border-radius:10px;color:#e65100">
-  <i class="bi bi-exclamation-triangle-fill fs-5"></i>
-  <span><strong>{{ produtos|length }} produto(s)</strong> abaixo do estoque mínimo!</span>
-</div>
-
-<div class="card">
-  <div class="card-header bg-white py-3">
-    <span class="fw-semibold">Produtos Críticos</span>
+<div class="pagina-cabecalho">
+  <div>
+    <h1>Alertas de reposição</h1>
+    <p>
+      {% if produtos %}{{ produtos|length }} {{ "produto está" if produtos|length == 1 else "produtos estão" }} no estoque mínimo ou abaixo dele. A reposição sugerida leva cada item ao dobro do mínimo.
+      {% else %}Produtos no estoque mínimo ou abaixo dele aparecem aqui.{% endif %}
+    </p>
   </div>
-  <div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
-      <thead style="background:#f8f9fa">
+  {% if produtos %}
+  <div class="pagina-acoes">
+    <a href="{{ url_for('relatorios.baixar', relatorio='estoque-baixo') }}" class="btn btn-contorno"><i class="bi bi-download"></i>Lista de compras (CSV)</a>
+  </div>
+  {% endif %}
+</div>
+
+<section class="painel">
+  {% if produtos %}
+  <div class="tabela-rolagem">
+    <table class="tabela">
+      <thead>
         <tr>
-          <th class="ps-4 text-muted fw-semibold" style="font-size:12px">PRODUTO</th>
-          <th class="text-muted fw-semibold" style="font-size:12px">CATEGORIA</th>
-          <th class="text-muted fw-semibold" style="font-size:12px">QUANTIDADE ATUAL</th>
-          <th class="text-muted fw-semibold" style="font-size:12px">MÍNIMO</th>
-          <th class="text-muted fw-semibold" style="font-size:12px">DÉFICIT</th>
-          <th></th>
+          <th class="col-produto">Produto</th>
+          <th>Estoque atual</th>
+          <th class="direita">Mínimo</th>
+          <th class="direita">Falta para o mínimo</th>
+          <th class="direita">Reposição sugerida</th>
+          <th><span class="visually-hidden">Ação</span></th>
         </tr>
       </thead>
       <tbody>
         {% for p in produtos %}
-        <tr style="border-left:3px solid #ef5350">
-          <td class="ps-4 fw-semibold">{{ p.nome }}</td>
+        <tr class="linha-critica">
           <td>
-            <span class="badge rounded-pill" style="background:#e3f2fd;color:#1565c0;font-weight:500">
-              {{ p.categoria }}
-            </span>
+            <div class="produto-nome">{{ p.nome }}</div>
+            <div class="categoria">{{ p.codigo }}, {{ p.categoria }}</div>
           </td>
           <td>
-            <span class="fw-bold text-danger">{{ p.quantidade }} {{ p.unidade }}</span>
+            <div class="estoque-celula">
+              {{ m.regua(p) }}
+              <span class="estoque-qtd num">{{ p.quantidade|numero }} <small>{{ p.unidade }}</small></span>
+            </div>
           </td>
-          <td class="text-muted">{{ p.estoque_minimo }}</td>
-          <td>
-            <span class="badge bg-danger rounded-pill px-3">
-              -{{ p.estoque_minimo - p.quantidade }}
-            </span>
+          <td class="direita num texto-2">{{ p.estoque_minimo|numero }}</td>
+          <td class="direita num">
+            {% if p.deficit %}<span class="fw-650" style="color: var(--critico)">{{ p.deficit|numero }} {{ p.unidade }}</span>
+            {% else %}<span class="texto-3">no limite</span>{% endif %}
           </td>
-          <td>
-            <a href="/movimentacao/entrada" class="btn btn-sm btn-success px-3">
-              <i class="bi bi-arrow-down-circle me-1"></i>Repor
+          <td class="direita num fw-650">{{ p.reposicao_sugerida|numero }} {{ p.unidade }}</td>
+          <td class="direita">
+            <a href="{{ url_for('movimentacoes.entrada', produto=p.id, quantidade=p.reposicao_sugerida) }}" class="btn btn-sm btn-entrada">
+              <i class="bi bi-box-arrow-in-down"></i>Repor
             </a>
           </td>
         </tr>
@@ -55,15 +60,13 @@
       </tbody>
     </table>
   </div>
-</div>
-
-{% else %}
-<div class="card p-5 text-center">
-  <div style="background:#e8f5e9;width:64px;height:64px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px">
-    <i class="bi bi-check-lg fs-3 text-success"></i>
+  {% else %}
+  <div class="vazio">
+    <div class="vazio-icone"><i class="bi bi-check2-circle"></i></div>
+    <h3>Nenhum item para repor</h3>
+    <p>Todos os produtos estão acima do estoque mínimo. Quando algum chegar ao limite, ele aparece nesta lista e no menu.</p>
+    <a href="{{ url_for('produtos.lista') }}" class="btn btn-contorno">Ver produtos</a>
   </div>
-  <h5 class="fw-bold">Tudo certo!</h5>
-  <p class="text-muted mb-0">Nenhum produto abaixo do estoque mínimo.</p>
-</div>
-{% endif %}
+  {% endif %}
+</section>
 {% endblock %}

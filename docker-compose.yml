@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
 
   # Container 1: Banco de dados PostgreSQL
@@ -10,7 +8,8 @@ services:
     environment:
       POSTGRES_DB: almoxarifado
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres123
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres123}
+      TZ: America/Campo_Grande
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -21,18 +20,23 @@ services:
       timeout: 5s
       retries: 10
 
-  # Container 2: Aplicação Flask
+  # Container 2: Aplicação Flask (servida pelo Gunicorn)
   app:
-    image: joaopedroborges/almoxarifado:latest
+    image: joaopedroborges/almoxarifado:2.0
     container_name: almoxarifado_app
     build: .
+    pull_policy: build          # sempre usa o código desta pasta, não a imagem antiga do Docker Hub
     restart: unless-stopped
     environment:
       DB_HOST: db
       DB_PORT: 5432
       DB_NAME: almoxarifado
       DB_USER: postgres
-      DB_PASSWORD: postgres123
+      DB_PASSWORD: ${DB_PASSWORD:-postgres123}
+      # Chave que assina os cookies de login. Troque em produção (veja o .env.example).
+      SECRET_KEY: ${SECRET_KEY:-troque-esta-chave-antes-de-colocar-em-producao}
+      TZ_APP: America/Campo_Grande
+      TZ: America/Campo_Grande
     ports:
       - "5000:5000"
     depends_on:
