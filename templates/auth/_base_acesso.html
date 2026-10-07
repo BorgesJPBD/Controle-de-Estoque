@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block titulo %}Entrar{% endblock %} | Almoxarifado Hospitalar</title>
+  <title>{% block titulo %}Entrar{% endblock %} | {{ nome_app }}</title>
   <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}">
@@ -13,42 +13,30 @@
 <body>
 <div class="acesso">
   <section class="acesso-vitrine" aria-hidden="true">
-    <div class="marca">
+    <div class="marca marca-grande">
       {{ m.simbolo() }}
-      <span class="marca-nome">Almoxarifado<span>Hospitalar</span></span>
+      <span class="marca-nome">{{ m.nome() }}<span class="marca-sub">Almoxarifado hospitalar</span></span>
     </div>
 
-    <div class="vitrine-texto">
-      <h1>Nenhum setor sem material.</h1>
-      <p>Registre entradas e saídas, acompanhe o estoque mínimo de cada item e saiba o que repor antes que acabe.</p>
-    </div>
-    <div class="prateleira">
-      <div class="prateleira-item">
-        <div class="nome">Luva de procedimento M<small>EPI</small></div>
-        <div class="qtd num">18 CX<small class="critico">Crítico</small></div>
-        <div class="regua critico"><div class="regua-nivel" style="width: 15%"></div><div class="regua-minimo" style="left: 33.3%"></div></div>
-      </div>
-      <div class="prateleira-item">
-        <div class="nome">Soro fisiológico 0,9% 500 ml<small>Soluções</small></div>
-        <div class="qtd num">390 BOLSA<small class="atencao">Atenção</small></div>
-        <div class="regua atencao"><div class="regua-nivel" style="width: 43%"></div><div class="regua-minimo" style="left: 33.3%"></div></div>
-      </div>
-      <div class="prateleira-item">
-        <div class="nome">Seringa descartável 5 ml<small>Descartáveis</small></div>
-        <div class="qtd num">1.940 UN<small class="normal">Normal</small></div>
-        <div class="regua"><div class="regua-nivel" style="width: 81%"></div><div class="regua-minimo" style="left: 33.3%"></div></div>
-      </div>
-      <div class="prateleira-legenda"><i></i>Estoque mínimo</div>
+    {# Estante de caixas: cada uma com um nível de estoque; no centro, a cruz do logo #}
+    {% set cruz = [31, 39, 41, 49] %}
+    <div class="estante">
+      {% for i in range(81) %}
+        {% set linha, coluna = i // 9, i % 9 %}
+        {% set distancia = (linha - 4)|abs + (coluna - 4)|abs %}
+        <i class="caixa{% if i in cruz %} cruz{% elif i == 40 %} cruz centro{% endif %}"
+           style="--nivel: {{ 12 + (i * 47 + 23) % 76 }}%; --atraso: {{ distancia * 70 }}ms"></i>
+      {% endfor %}
     </div>
 
-    <div class="vitrine-rodape">Desenvolvido pela equipe EstoqueFlow para a Add Solutions</div>
+    <div class="vitrine-rodape">Desenvolvido pela equipe EstoqueFlow</div>
   </section>
 
   <section class="acesso-form">
     <div class="acesso-caixa">
       <a class="acesso-marca-movel" href="{{ url_for('auth.login') }}">
-        {{ m.simbolo(fundo="#0c3a35", traco="#8fd8c4") }}
-        Almoxarifado Hospitalar
+        {{ m.simbolo(fundo=true) }}
+        {{ m.nome() }}
       </a>
       {% with mensagens = get_flashed_messages(with_categories=true) %}
         {% for categoria, mensagem in mensagens %}

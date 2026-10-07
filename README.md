@@ -1,6 +1,8 @@
-# Almoxarifado Hospitalar
+# Almox+
 
-Sistema web de controle de estoque para almoxarifados hospitalares. Ele registra entradas e saídas de materiais, mostra para qual setor cada item foi e avisa quando um produto chega ao estoque mínimo.
+<img src="static/img/favicon.svg" width="64" alt="Logo do Almox+">
+
+**Almox+** é um sistema web de controle de estoque para almoxarifados hospitalares. Ele registra entradas e saídas de materiais, mostra para qual setor cada item foi e avisa quando um produto chega ao estoque mínimo.
 
 Projeto da disciplina de Gerenciamento de Projetos (IFMS), desenvolvido pela equipe **EstoqueFlow** (João Pedro Borges, Matheus Costa e Guilherme Alves) para a **Add Solutions**.
 
@@ -81,6 +83,10 @@ set FLASK_DEBUG=1
 python app.py
 ```
 
+### Trocar o nome do sistema
+
+O nome aparece no logo, no menu e nas abas do navegador. Para trocar, mude a variável `NOME_APP` no `docker-compose.yml` (ou no `.env`) e rode `docker compose up -d --build` de novo. Se o nome terminar com `+`, o sinal fica destacado em verde.
+
 ## Estrutura do projeto
 
 ```
@@ -141,6 +147,7 @@ docker push joaopedroborges/almoxarifado:2.0
 - O formulário não perde o que foi digitado quando dá erro.
 
 **Interface**
+- Nome e identidade próprios: **Almox+**, com logo de uma cruz hospitalar formada por caixas de estoque.
 - Novo visual com painel de indicadores e gráficos, régua de estoque mínimo, notificações e confirmação antes de excluir.
 - Funciona no celular.
 - Fonte Atkinson Hyperlegible, criada para máxima legibilidade.

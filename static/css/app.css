@@ -131,8 +131,12 @@ a { text-underline-offset: 2px; }
 }
 .marca:hover { color: #fff; }
 .marca-simbolo { flex: none; width: 36px; height: 36px; }
-.marca-nome { font-size: 0.95rem; font-weight: 750; line-height: 1.15; letter-spacing: -0.005em; }
-.marca-nome span { display: block; font-weight: 450; font-size: 0.8rem; color: rgba(255, 255, 255, 0.62); margin-top: 2px; letter-spacing: 0; }
+.marca-nome { display: flex; flex-direction: column; line-height: 1.05; }
+.marca-texto { font-size: 1.375rem; font-weight: 800; letter-spacing: -0.035em; color: #fff; }
+.marca-mais { color: var(--scrub-brilho); margin-left: 1px; }
+.marca-sub { font-size: 0.75rem; font-weight: 500; color: rgba(255, 255, 255, 0.58); margin-top: 3px; letter-spacing: 0; }
+.barra-movel .marca-texto { font-size: 1.2rem; }
+.barra-movel .marca-simbolo { width: 30px; height: 30px; }
 
 .nav-grupo { padding: 6px 12px; }
 .nav-grupo + .nav-grupo { margin-top: 6px; }
@@ -664,6 +668,7 @@ a.indicador:hover { background: var(--superficie-2); }
   padding: 40px 56px;
   display: flex;
   flex-direction: column;
+  gap: 40px;
 }
 /* trama leve, como o tecido do uniforme cirúrgico */
 .acesso-vitrine::before {
@@ -677,44 +682,48 @@ a.indicador:hover { background: var(--superficie-2); }
 }
 .acesso-vitrine > * { position: relative; }
 .acesso-vitrine .marca { padding: 0; }
-.vitrine-texto { margin-top: auto; max-width: 30rem; }
-.vitrine-texto h1 {
-  color: #fff;
-  font-size: clamp(2.25rem, 3.6vw, 3.25rem);
-  font-weight: 780;
-  line-height: 1.04;
-  letter-spacing: -0.03em;
-  margin: 0 0 16px;
-}
-.vitrine-texto p { font-size: 1.0625rem; line-height: 1.55; color: rgba(255, 255, 255, 0.74); margin: 0; max-width: 34ch; }
+.marca-grande { gap: 16px; }
+.marca-grande .marca-simbolo { width: 52px; height: 52px; }
+.marca-grande .marca-texto { font-size: 2.125rem; }
+.marca-grande .marca-sub { font-size: 0.9rem; margin-top: 4px; }
 
-/* prévia de prateleira: mostra a régua de estoque em ação */
-.prateleira {
-  margin: 40px 0 auto;
-  max-width: 30rem;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 14px;
-  padding: 6px 0;
+/* estante de caixas: cada uma com um nível de estoque; no centro, a cruz do logo */
+.estante {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 1.6%;
+  width: min(600px, 86%);
+  aspect-ratio: 1;
+  margin: auto;
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 20%, rgba(0, 0, 0, 0.5) 42%, transparent 70%);
+  mask-image: radial-gradient(circle at 50% 50%, #000 20%, rgba(0, 0, 0, 0.5) 42%, transparent 70%);
 }
-.prateleira-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; align-items: center; padding: 14px 20px; }
-.prateleira-item + .prateleira-item { border-top: 1px solid rgba(255, 255, 255, 0.08); }
-.prateleira-item .nome { font-weight: 650; font-size: 0.95rem; }
-.prateleira-item .nome small { display: block; font-weight: 450; font-size: 0.8rem; color: rgba(255, 255, 255, 0.55); margin-top: 1px; }
-.prateleira-item .qtd { text-align: right; font-weight: 700; font-size: 0.95rem; }
-.prateleira-item .qtd small { display: block; font-weight: 600; font-size: 0.75rem; }
-.prateleira-item .regua { grid-column: 1 / -1; background: rgba(255, 255, 255, 0.12); }
-.prateleira-item .regua-minimo { background: #fff; box-shadow: 0 0 0 2px var(--scrub-escuro); }
-.prateleira-item .regua-nivel { background: var(--scrub-brilho); }
-.prateleira-item .regua.critico .regua-nivel { background: #ff7d70; }
-.prateleira-item .regua.atencao .regua-nivel { background: #f4b649; }
-.prateleira-item .qtd .critico { color: #ff9a8f; }
-.prateleira-item .qtd .atencao { color: #f6c46a; }
-.prateleira-item .qtd .normal { color: var(--scrub-brilho); }
-.prateleira-legenda { display: flex; align-items: center; gap: 8px; font-size: 0.8rem; color: rgba(255, 255, 255, 0.55); padding: 10px 20px 8px; }
-.prateleira-legenda i { width: 2px; height: 12px; background: #fff; border-radius: 1px; display: inline-block; }
+.caixa {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22%;
+  background: rgba(255, 255, 255, 0.05);
+}
+.caixa::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0 0;
+  height: var(--nivel);
+  background: rgba(143, 216, 196, 0.17);
+  transform-origin: bottom;
+  animation: caixa-encher 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) var(--atraso) both;
+}
+.caixa.cruz {
+  background: var(--scrub-brilho);
+  box-shadow: 0 12px 48px rgba(143, 216, 196, 0.28);
+  animation: caixa-acender 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) calc(var(--atraso) + 500ms) both;
+}
+.caixa.cruz::after { display: none; }
+.caixa.centro { background: #fff; }
+@keyframes caixa-encher { from { transform: scaleY(0); } }
+@keyframes caixa-acender { from { opacity: 0; transform: scale(0.55); } }
 
-.vitrine-rodape { margin-top: 40px; font-size: 0.8125rem; color: rgba(255, 255, 255, 0.5); }
+.vitrine-rodape { font-size: 0.8125rem; color: rgba(255, 255, 255, 0.45); }
 
 .acesso-form { display: flex; align-items: center; justify-content: center; padding: 48px 32px; }
 .acesso-caixa { width: 100%; max-width: 400px; }
@@ -730,7 +739,9 @@ a.indicador:hover { background: var(--superficie-2); }
   .acesso-vitrine { display: none; }
   .acesso-form { align-items: flex-start; padding: 32px 20px; }
   .acesso-marca-movel { display: flex; align-items: center; gap: 10px; margin-bottom: 32px; color: var(--tinta); text-decoration: none; font-weight: 750; }
-  .acesso-marca-movel .marca-simbolo { width: 32px; height: 32px; }
+  .acesso-marca-movel .marca-simbolo { width: 40px; height: 40px; }
+  .acesso-marca-movel .marca-texto { color: var(--tinta); font-size: 1.75rem; }
+  .acesso-marca-movel .marca-mais { color: var(--scrub); }
 }
 
 /* medidor de força da senha */

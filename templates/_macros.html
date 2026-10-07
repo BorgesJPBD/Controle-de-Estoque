@@ -1,10 +1,20 @@
-{# ── Símbolo da marca: cruz hospitalar sobre a prateleira ── #}
-{% macro simbolo(fundo="#8fd8c4", traco="#0c3a35") -%}
-<svg class="marca-simbolo" viewBox="0 0 36 36" aria-hidden="true" focusable="false">
-  <rect width="36" height="36" rx="9" fill="{{ fundo }}"/>
-  <path d="M18 8.5v13M11.5 15h13" stroke="{{ traco }}" stroke-width="4.2" stroke-linecap="round"/>
-  <path d="M9.5 27.5h17" stroke="{{ traco }}" stroke-width="2.6" stroke-linecap="round"/>
+{# ── Logo: cruz hospitalar formada por 5 caixas de estoque ── #}
+{% macro simbolo(tema="escuro", classe="marca-simbolo", fundo=false) -%}
+{%- if tema == "escuro" %}{% set braco, centro = "#8fd8c4", "#ffffff" %}{% else %}{% set braco, centro = "#0f6e5e", "#2fb595" %}{% endif -%}
+<svg class="{{ classe }}" viewBox="0 0 40 40" aria-hidden="true" focusable="false">
+  {% if fundo %}<rect width="40" height="40" rx="11" fill="#0c3a35"/>{% endif %}
+  <rect x="15.5" y="4.75" width="9" height="9" rx="2.4" fill="{{ braco }}"/>
+  <rect x="4.75" y="15.5" width="9" height="9" rx="2.4" fill="{{ braco }}"/>
+  <rect x="15.5" y="15.5" width="9" height="9" rx="2.4" fill="{{ centro }}"/>
+  <rect x="26.25" y="15.5" width="9" height="9" rx="2.4" fill="{{ braco }}"/>
+  <rect x="15.5" y="26.25" width="9" height="9" rx="2.4" fill="{{ braco }}"/>
 </svg>
+{%- endmacro %}
+
+{# ── Nome do sistema (definido em NOME_APP, no app.py) ── #}
+{% macro nome() -%}
+{%- set n = nome_app or "Almox+" -%}
+<span class="marca-texto">{% if n.endswith("+") %}{{ n[:-1] }}<span class="marca-mais">+</span>{% else %}{{ n }}{% endif %}</span>
 {%- endmacro %}
 
 {# ── Régua de estoque: barra de nível com a marca do estoque mínimo ── #}

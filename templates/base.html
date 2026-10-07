@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block titulo %}Painel{% endblock %} | Almoxarifado Hospitalar</title>
+  <title>{% block titulo %}Painel{% endblock %} | {{ nome_app }}</title>
   <link rel="icon" href="{{ url_for('static', filename='img/favicon.svg') }}" type="image/svg+xml">
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap/bootstrap.min.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='vendor/bootstrap-icons/bootstrap-icons.min.css') }}">
@@ -84,7 +84,7 @@
   <aside class="lateral lateral-fixa d-none d-lg-flex">
     <a class="marca" href="{{ url_for('painel.inicio') }}">
       {{ m.simbolo() }}
-      <span class="marca-nome">Almoxarifado<span>Hospitalar</span></span>
+      <span class="marca-nome">{{ m.nome() }}<span class="marca-sub">Almoxarifado hospitalar</span></span>
     </a>
     {{ navegacao() }}
   </aside>
@@ -96,14 +96,14 @@
     </button>
     <a class="marca" href="{{ url_for('painel.inicio') }}">
       {{ m.simbolo() }}
-      <span class="marca-nome">Almoxarifado Hospitalar</span>
+      <span class="marca-nome">{{ m.nome() }}</span>
     </a>
   </header>
   <div class="offcanvas offcanvas-start lateral d-lg-none" tabindex="-1" id="menuMovel" aria-label="Menu">
     <div class="d-flex align-items-center justify-content-between pe-3">
       <a class="marca" href="{{ url_for('painel.inicio') }}">
         {{ m.simbolo() }}
-        <span class="marca-nome">Almoxarifado<span>Hospitalar</span></span>
+        <span class="marca-nome">{{ m.nome() }}<span class="marca-sub">Almoxarifado hospitalar</span></span>
       </a>
       <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Fechar menu"></button>
     </div>

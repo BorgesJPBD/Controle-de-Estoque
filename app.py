@@ -59,6 +59,8 @@ def criar_app(inicializar_banco: bool = True) -> Flask:
         REMEMBER_COOKIE_HTTPONLY=True,
         REMEMBER_COOKIE_SAMESITE="Lax",
         MAX_CONTENT_LENGTH=2 * 1024 * 1024,
+        # Nome exibido no logo, no menu e nas abas do navegador
+        NOME_APP=os.environ.get("NOME_APP", "Almox+"),
     )
 
     # ── Login ─────────────────────────────────────────────────────────────────
@@ -115,7 +117,8 @@ def criar_app(inicializar_banco: bool = True) -> Flask:
     # ── Variáveis e filtros disponíveis em todos os templates ─────────────────
     @app.context_processor
     def variaveis_globais():
-        dados = {"csrf_token": gerar_token_csrf, "agora": agora()}
+        dados = {"csrf_token": gerar_token_csrf, "agora": agora(),
+                 "nome_app": app.config["NOME_APP"]}
         if current_user.is_authenticated:
             try:
                 dados["qtd_alertas"] = ProdutoService.contar_estoque_baixo()

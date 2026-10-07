@@ -37,6 +37,8 @@ services:
       SECRET_KEY: ${SECRET_KEY:-troque-esta-chave-antes-de-colocar-em-producao}
       TZ_APP: America/Campo_Grande
       TZ: America/Campo_Grande
+      # Nome exibido no logo, no menu e nas abas do navegador
+      NOME_APP: ${NOME_APP:-Almox+}
     ports:
       - "5000:5000"
     depends_on:
